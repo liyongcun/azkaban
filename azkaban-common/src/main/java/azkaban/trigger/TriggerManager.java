@@ -39,7 +39,7 @@ import org.apache.log4j.Logger;
 public class TriggerManager extends EventHandler implements
     TriggerManagerAdapter {
 
-  public static final long DEFAULT_SCANNER_INTERVAL_MS = 60000;
+  public static final long DEFAULT_SCANNER_INTERVAL_MS = 1000;//add by liyc 支持秒级别调度
   private static final Logger logger = Logger.getLogger(TriggerManager.class);
   private static final Map<Integer, Trigger> triggerIdMap =
       new ConcurrentHashMap<>();
