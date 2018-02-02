@@ -1156,6 +1156,7 @@ public class ExecutorManager extends EventHandler implements
       final ExecutionOptions options = flow.getExecutionOptions();
       // But we can definitely email them.
       final Alerter mailAlerter = this.alerterHolder.get("email");
+      //错误信息告警位置
       if (flow.getStatus() == Status.FAILED || flow.getStatus() == Status.KILLED) {
         if (options.getFailureEmails() != null && !options.getFailureEmails().isEmpty()) {
           try {
