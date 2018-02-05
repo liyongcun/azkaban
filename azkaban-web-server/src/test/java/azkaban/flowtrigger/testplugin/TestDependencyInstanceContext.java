@@ -14,16 +14,21 @@
  * the License.
  */
 
-package azkaban.flowtrigger;
+package azkaban.flowtrigger.testplugin;
 
-/**
- * Implementing class should hold context information for a running dependency
- * instance.
- */
-public interface DependencyInstanceContext {
+import azkaban.flowtrigger.DependencyInstanceCallback;
+import azkaban.flowtrigger.DependencyInstanceConfig;
+import azkaban.flowtrigger.DependencyInstanceContext;
+import azkaban.flowtrigger.DependencyInstanceRuntimeProps;
 
-  /**
-   * cancel the instance context.
-   */
-  void cancel();
+public class TestDependencyInstanceContext implements DependencyInstanceContext {
+
+  public TestDependencyInstanceContext(final DependencyInstanceConfig config,
+      final DependencyInstanceRuntimeProps runtimeProps,
+      final DependencyInstanceCallback callback) {
+  }
+
+  @Override
+  public void cancel() {
+  }
 }

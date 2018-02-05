@@ -16,14 +16,20 @@
 
 package azkaban.flowtrigger;
 
-/**
- * Implementing class should hold context information for a running dependency
- * instance.
- */
-public interface DependencyInstanceContext {
+import com.google.common.collect.ImmutableSet;
+import java.util.Set;
 
-  /**
-   * cancel the instance context.
-   */
-  void cancel();
+/**
+ * Represents status for trigger/dependency
+ */
+public enum Status {
+  RUNNING, // dependency instance is running
+  SUCCEEDED, // dependency instance succeeds
+  CANCELLED, // dependency instance is cancelled
+  CANCELLING; // dependency instance is being cancelled
+
+  public static boolean isDone(final Status status) {
+    final Set<Status> terminalStatus = ImmutableSet.of(SUCCEEDED, CANCELLED);
+    return terminalStatus.contains(status);
+  }
 }

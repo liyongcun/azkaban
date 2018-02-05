@@ -16,13 +16,17 @@
 
 package azkaban.flowtrigger;
 
-/**
- * Defines the action to take when dependency check instance is successfully finished.
- */
-public interface SuccessCallback {
+import azkaban.spi.AzkabanException;
 
-  /**
-   * action to invoke when dependency check instance is successfully finished.
-   */
-  void onSuccess(DependencyInstanceContext dependencyInstance);
+public class DependencyException extends AzkabanException {
+
+  private static final long serialVersionUID = 1L;
+
+  public DependencyException(final String message) {
+    super(message);
+  }
+
+  public DependencyException(final String message, final Throwable cause) {
+    super(message, cause);
+  }
 }

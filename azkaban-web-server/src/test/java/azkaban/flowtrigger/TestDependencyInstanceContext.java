@@ -16,14 +16,18 @@
 
 package azkaban.flowtrigger;
 
-/**
- * Implementing class should hold context information for a running dependency
- * instance.
- */
-public interface DependencyInstanceContext {
+public class TestDependencyInstanceContext implements DependencyInstanceContext {
 
-  /**
-   * cancel the instance context.
-   */
-  void cancel();
+  private final DependencyInstanceCallback callback;
+
+  public TestDependencyInstanceContext(final DependencyInstanceConfig config,
+      final DependencyInstanceRuntimeProps runtimeProps,
+      final DependencyInstanceCallback callback) {
+    this.callback = callback;
+  }
+
+  @Override
+  public void cancel() {
+    this.callback.onCancel(this);
+  }
 }

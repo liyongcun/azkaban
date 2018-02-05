@@ -16,14 +16,10 @@
 
 package azkaban.flowtrigger;
 
-/**
- * Implementing class should hold context information for a running dependency
- * instance.
- */
-public interface DependencyInstanceContext {
-
-  /**
-   * cancel the instance context.
-   */
-  void cancel();
+public enum CancellationCause {
+  NONE, //no cancellation occurred
+  TIMEOUT, // cancellation is issued due to exceeding max wait time
+  MANUAL, // cancellation is issued by user
+  FAILURE, // cancellation is issued by dependency instance failure
+  CASCADING // cancelled by cascading failure
 }

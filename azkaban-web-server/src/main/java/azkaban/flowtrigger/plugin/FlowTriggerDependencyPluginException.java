@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 LinkedIn Corp.
+ * Copyright 2018 LinkedIn Corp.
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not
  * use this file except in compliance with the License. You may obtain a copy of
@@ -14,16 +14,15 @@
  * the License.
  */
 
-package azkaban.flowtrigger;
+package azkaban.flowtrigger.plugin;
 
-/**
- * Implementing class should hold context information for a running dependency
- * instance.
- */
-public interface DependencyInstanceContext {
+public class FlowTriggerDependencyPluginException extends Exception {
 
-  /**
-   * cancel the instance context.
-   */
-  void cancel();
+  public FlowTriggerDependencyPluginException(final String message) {
+    super(message);
+  }
+
+  public FlowTriggerDependencyPluginException(final Throwable cause) {
+    super(cause);
+  }
 }
