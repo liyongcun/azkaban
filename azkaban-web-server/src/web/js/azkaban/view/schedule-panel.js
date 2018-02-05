@@ -49,7 +49,7 @@ azkaban.SchedulePanelView = Backbone.View.extend({
 
     scheduleData.ajax = "scheduleCronFlow";
     scheduleData.projectName = projectName;
-    scheduleData.cronExpression = "0 " + $('#cron-output').val();
+    scheduleData.cronExpression = $('#cron-output').val();
 
     // Currently, All cron expression will be based on server timezone.
     // Later we might implement a feature support cron under various timezones, depending on the future use cases.
@@ -107,8 +107,9 @@ $(function () {
 
   updateOutput();
   $("#clearCron").click(function () {
-    $('#cron-output').val("* * ? * *");
+    $('#cron-output').val("0 * * ? * *");
     resetLabelColor();
+    $("#second_input").val("0");
     $("#minute_input").val("*");
     $("#hour_input").val("*");
     $("#dom_input").val("?");
@@ -122,6 +123,16 @@ $(function () {
       $("#instructions tbody tr:last").remove();
     }
   });
+    $("#second_input").click(function () {
+        while ($("#instructions tbody tr:last").index() >= 4) {
+            $("#instructions tbody tr:last").remove();
+        }
+        resetLabelColor();
+        $("#sec_label").css("color", "red");
+        $('#instructions tbody').append($("#instructions tbody tr:first").clone());
+        $('#instructions tbody tr:last th').html("0-59");
+        $('#instructions tbody tr:last td').html("allowed values");
+    });
 
   $("#minute_input").click(function () {
     while ($("#instructions tbody tr:last").index() >= 4) {
@@ -190,6 +201,7 @@ $(function () {
 });
 
 function resetLabelColor() {
+  $("#sec_label").css("color", "black");
   $("#min_label").css("color", "black");
   $("#hour_label").css("color", "black");
   $("#dom_label").css("color", "black");
@@ -197,6 +209,7 @@ function resetLabelColor() {
   $("#dow_label").css("color", "black");
 }
 
+var cron_second_id = "#second_input";
 var cron_minutes_id = "#minute_input";
 var cron_hours_id = "#hour_input";
 var cron_dom_id = "#dom_input";
@@ -207,7 +220,7 @@ var cron_translate_id = "#cronTranslate";
 var cron_translate_warning_id = "#translationWarning";
 
 function updateOutput() {
-  $(cron_output_id).val($(cron_minutes_id).val() + " " + $(cron_hours_id).val()
+  $(cron_output_id).val($(cron_second_id).val() + " " +$(cron_minutes_id).val() + " " + $(cron_hours_id).val()
       + " " +
       $(cron_dom_id).val() + " " + $(cron_months_id).val() + " " + $(
           cron_dow_id).val()

@@ -633,7 +633,7 @@ public class ScheduleServlet extends LoginAbstractAzkabanServlet {
 
     final Schedule schedule =
         this.scheduleManager.scheduleFlow(-1, projectId, projectName, flowName,
-            "ready", firstSchedTime.getMillis(), endSchedTime, firstSchedTime.getZone(),
+            "READY", firstSchedTime.getMillis(), endSchedTime, firstSchedTime.getZone(),
             thePeriod, DateTime.now().getMillis(), firstSchedTime.getMillis(),
             firstSchedTime.getMillis(), user.getUserId(), flowOptions,
             slaOptions);
@@ -723,7 +723,7 @@ public class ScheduleServlet extends LoginAbstractAzkabanServlet {
     // Because either cronExpression or recurrence exists, we build schedule in the below way.
     final Schedule schedule = this.scheduleManager
         .cronScheduleFlow(-1, projectId, projectName, flowName,
-            "ready", firstSchedTime.getMillis(), endSchedTime, firstSchedTime.getZone(),
+            "READY", firstSchedTime.getMillis(), endSchedTime, firstSchedTime.getZone(),
             DateTime.now().getMillis(), firstSchedTime.getMillis(),
             firstSchedTime.getMillis(), user.getUserId(), flowOptions,
             slaOptions, cronExpression);

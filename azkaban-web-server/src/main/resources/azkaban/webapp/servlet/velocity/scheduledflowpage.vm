@@ -105,11 +105,6 @@
                 <td>${sched.submitUser}</td>
                 <td>$utils.formatDateTime(${sched.firstSchedTime})</td>
                 <td>$utils.formatDateTime(${sched.nextExecTime})</td>
-                #if (${sched.status})
-                    <td> ${sched.status}</td>
-                #else
-                    <td>未知</td>
-                #end
                 #if (${sched.period})
                   <td> $utils.formatPeriod(${sched.period})</td>
                 #else
@@ -119,6 +114,15 @@
                   <td> ${sched.cronExpression}</td>
                 #else
                   <td>未知</td>
+                #end
+                #if (${sched.status})
+                    #if (${sched.status} == "READY")
+                      <td style="background-color:#42ff11"> 运行中</td>
+                    #else
+                      <td style="background-color:#f7dc12">暂停</td>
+                    #end
+                #else
+                    <td>未知</td>
                 #end
                 <td><button type="button" data-toggle="modal" data-target="#executionOptions">show</button></td>
 
