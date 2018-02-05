@@ -81,7 +81,11 @@
                   finished
                 </label>
               </div>
-
+                <div class="btn-group" data-toggle="buttons">
+                    <label class="btn btn-default">
+                        <input type="checkbox"  id="notify-url" name="notify" value="url">Url Msg
+                    </label>
+                </div>
               <h4>Failure Emails</h4>
               <div class="checkbox">
                 <label>

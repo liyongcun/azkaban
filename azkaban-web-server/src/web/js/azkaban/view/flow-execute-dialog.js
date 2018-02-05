@@ -54,6 +54,7 @@ azkaban.FlowExecuteDialogView = Backbone.View.extend({
     var successEmails = $('#success-emails').val();
     var notifyFailureFirst = $('#notify-failure-first').is(':checked');
     var notifyFailureLast = $('#notify-failure-last').is(':checked');
+    var notifyUrl= $('#notify-url').is(':checked');
     var failureEmailsOverride = $("#override-failure-emails").is(':checked');
     var successEmailsOverride = $("#override-success-emails").is(':checked');
 
@@ -86,6 +87,7 @@ azkaban.FlowExecuteDialogView = Backbone.View.extend({
       successEmails: successEmails,
       notifyFailureFirst: notifyFailureFirst,
       notifyFailureLast: notifyFailureLast,
+      notifyUrl:notifyUrl,
       flowOverride: flowOverride
     };
 

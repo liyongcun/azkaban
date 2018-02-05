@@ -77,12 +77,13 @@
             <th>ID</th>
             <th>Flow</th>
             <th>Project</th>
-            <th>Submitted By</th>
-            <th class="date">First Scheduled to Run</th>
-            <th class="date">Next Execution Time</th>
+            <th>提交时间</th>
+            <th class="date">首次运行时间</th>
+            <th class="date">下次运行时间</th>
             <th class="date">Repeats Every</th>
-            <th class="date">Cron Expression</th>
-            <th>Execution Options</th>
+            <th class="date">Cron表达式</th>
+            <th>运行状态</th>
+            <th>执行参数</th>
             <th>Has SLA</th>
             <th colspan="2" class="action ignoresort">Action</th>
           </tr>
@@ -104,15 +105,20 @@
                 <td>${sched.submitUser}</td>
                 <td>$utils.formatDateTime(${sched.firstSchedTime})</td>
                 <td>$utils.formatDateTime(${sched.nextExecTime})</td>
+                #if (${sched.status})
+                    <td> ${sched.status}</td>
+                #else
+                    <td>未知</td>
+                #end
                 #if (${sched.period})
                   <td> $utils.formatPeriod(${sched.period})</td>
                 #else
-                  <td>Not Applicable</td>
+                  <td>未知</td>
                 #end
                 #if (${sched.cronExpression})
                   <td> ${sched.cronExpression}</td>
                 #else
-                  <td>Not Applicable</td>
+                  <td>未知</td>
                 #end
                 <td><button type="button" data-toggle="modal" data-target="#executionOptions">show</button></td>
 
@@ -134,8 +140,17 @@
                   </div>
                 <td>#if(${sched.slaOptions}) true #else false #end</td>
                 <td>
+                  #if (${sched.status} == "READY")
+                      <button type="button" id="removeSchedBtn" class="btn btn-sm btn-warning"
+                              onclick="pauseSched(${sched.scheduleId})">暂停
+                      </button>
+                  #else
+                      <button type="button" id="removeSchedBtn" class="btn btn-sm btn-info"
+                              onclick="resumeSched(${sched.scheduleId})">恢复
+                      </button>
+                  #end
                   <button type="button" id="removeSchedBtn" class="btn btn-sm btn-danger"
-                          onclick="removeSched(${sched.scheduleId})">Remove Schedule
+                          onclick="removeSched(${sched.scheduleId})">删除
                   </button>
                 </td>
                 <td>

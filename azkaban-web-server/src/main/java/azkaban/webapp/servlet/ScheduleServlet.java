@@ -419,6 +419,10 @@ public class ScheduleServlet extends LoginAbstractAzkabanServlet {
           ajaxScheduleCronFlow(req, ret, session.getUser());
         } else if (action.equals("removeSched")) {
           ajaxRemoveSched(req, ret, session.getUser());
+        } else if (action.equals("pauseSched")) {
+          ajaxPauseSched(req, ret, session.getUser());
+        } else if (action.equals("resumeSched")) {
+          ajaxResumeSched(req, ret, session.getUser());
         }
       }
 
@@ -472,6 +476,90 @@ public class ScheduleServlet extends LoginAbstractAzkabanServlet {
     ret.put("status", "success");
     ret.put("message", "flow " + sched.getFlowName()
         + " removed from Schedules.");
+    return;
+  }
+  private void ajaxPauseSched(final HttpServletRequest req, final Map<String, Object> ret,
+                               final User user) throws ServletException {
+    final int scheduleId = getIntParam(req, "scheduleId");
+    final Schedule sched;
+    try {
+      sched = this.scheduleManager.getSchedule(scheduleId);
+    } catch (final ScheduleManagerException e) {
+      throw new ServletException(e);
+    }
+    if (sched == null) {
+      ret.put("message", "Schedule with ID " + scheduleId + " does not exist");
+      ret.put("status", "error");
+      return;
+    }
+
+    final Project project = this.projectManager.getProject(sched.getProjectId());
+
+    if (project == null) {
+      ret.put("message", "Project " + sched.getProjectId() + " does not exist");
+      ret.put("status", "error");
+      return;
+    }
+
+    if (!hasPermission(project, user, Type.SCHEDULE)) {
+      ret.put("status", "error");
+      ret.put("message", "Permission denied. Cannot remove schedule with id "
+              + scheduleId);
+      return;
+    }
+
+    this.scheduleManager.pauseSchedule(sched);
+    logger.info("User '" + user.getUserId() + " has pause schedule "
+            + sched.getScheduleName());
+    this.projectManager
+            .postProjectEvent(project, EventType.SCHEDULE, user.getUserId(),
+                    "Schedule " + sched.toString() + " has been paused.");
+
+    ret.put("status", "success");
+    ret.put("message", "flow " + sched.getFlowName()
+            + " has been paused");
+    return;
+  }
+  private void ajaxResumeSched(final HttpServletRequest req, final Map<String, Object> ret,
+                               final User user) throws ServletException {
+    final int scheduleId = getIntParam(req, "scheduleId");
+    final Schedule sched;
+    try {
+      sched = this.scheduleManager.getSchedule(scheduleId);
+    } catch (final ScheduleManagerException e) {
+      throw new ServletException(e);
+    }
+    if (sched == null) {
+      ret.put("message", "Schedule with ID " + scheduleId + " does not exist");
+      ret.put("status", "error");
+      return;
+    }
+
+    final Project project = this.projectManager.getProject(sched.getProjectId());
+
+    if (project == null) {
+      ret.put("message", "Project " + sched.getProjectId() + " does not exist");
+      ret.put("status", "error");
+      return;
+    }
+
+    if (!hasPermission(project, user, Type.SCHEDULE)) {
+      ret.put("status", "error");
+      ret.put("message", "Permission denied. Cannot remove schedule with id "
+              + scheduleId);
+      return;
+    }
+
+    this.scheduleManager.resumeSchedule(sched);
+    logger.info("User '" + user.getUserId() + " has resumed schedule "
+            + sched.getScheduleName());
+    this.projectManager
+            .postProjectEvent(project, EventType.SCHEDULE, user.getUserId(),
+                    "Schedule " + sched.toString() + " has been resumed.");
+
+    ret.put("status", "success");
+    ret.put("message", "flow " + sched.getFlowName()
+            + " resumed from Schedules.");
     return;
   }
 

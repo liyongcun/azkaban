@@ -143,6 +143,39 @@ public class ScheduleManager implements TriggerAgent {
     }
   }
 
+  /**
+   * pause the flow from the schedule if it exists.
+   */
+  public synchronized void pauseSchedule(final Schedule sched) {
+    final Pair<Integer, String> identityPairMap = sched.getScheduleIdentityPair();
+
+    final Schedule schedule = this.scheduleIdentityPairMap.get(identityPairMap);
+    if (schedule != null) {
+      try {
+        schedule.setStatus(TriggerStatus.PAUSED.toString());
+        this.loader.updateSchedule(sched);
+      } catch (final ScheduleManagerException e) {
+        logger.error(e);
+      }
+    }
+  }
+  /**
+   * start the flow from the schedule if it exists.
+   */
+  public synchronized void resumeSchedule(final Schedule sched) {
+    final Pair<Integer, String> identityPairMap = sched.getScheduleIdentityPair();
+
+    final Schedule schedule = this.scheduleIdentityPairMap.get(identityPairMap);
+    if (schedule != null) {
+      try {
+        schedule.setStatus(TriggerStatus.READY.toString());
+        this.loader.updateSchedule(sched);
+      } catch (final ScheduleManagerException e) {
+        logger.error(e);
+      }
+    }
+  }
+
   public Schedule scheduleFlow(final int scheduleId,
       final int projectId,
       final String projectName,

@@ -17,13 +17,7 @@
 package azkaban.scheduler;
 
 import azkaban.Constants;
-import azkaban.trigger.Condition;
-import azkaban.trigger.ConditionChecker;
-import azkaban.trigger.Trigger;
-import azkaban.trigger.TriggerAction;
-import azkaban.trigger.TriggerManager;
-import azkaban.trigger.TriggerManagerAdapter;
-import azkaban.trigger.TriggerManagerException;
+import azkaban.trigger.*;
 import azkaban.trigger.builtin.BasicTimeChecker;
 import azkaban.trigger.builtin.ExecuteFlowAction;
 import javax.inject.Inject;
@@ -121,6 +115,7 @@ public class TriggerBasedScheduleLoader implements ScheduleLoader {
   @Override
   public void updateSchedule(final Schedule s) throws ScheduleManagerException {
     final Trigger t = scheduleToTrigger(s);
+    t.setStatus(TriggerStatus.valueOf(s.getStatus().toUpperCase()));
     try {
       this.triggerManager.updateTrigger(t, t.getSubmitUser());
     } catch (final TriggerManagerException e) {
