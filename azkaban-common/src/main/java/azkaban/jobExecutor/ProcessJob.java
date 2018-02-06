@@ -89,16 +89,27 @@ public class ProcessJob extends AbstractProcessJob {
 
     boolean isApos = false;
     boolean isQuote = false;
+
+    //
+    boolean opts=false;
+
     while (index < command.length()) {
       final char c = command.charAt(index);
-
+      //todo 这里还要处理参数的问题
       switch (c) {
         case ' ':
           if (!isQuote && !isApos) {
-            final String arg = buffer.toString();
-            buffer = new StringBuffer(command.length() - index);
-            if (arg.length() > 0) {
-              commands.add(arg);
+            //判断是否有带参数的，例如 --a -1
+            if (opts && ((command.charAt(index+1) =='-' && Character.isDigit(command.charAt(index+1)))
+                    || (Character.isDigit(command.charAt(index+1))) )  ) {
+                buffer.append(c);
+                opts =false;
+            } else {
+              final String arg = buffer.toString();
+              buffer = new StringBuffer(command.length() - index);
+              if (arg.length() > 0) {
+                commands.add(arg);
+              }
             }
           } else {
             buffer.append(c);
@@ -115,6 +126,14 @@ public class ProcessJob extends AbstractProcessJob {
           if (!isApos) {
             isQuote = !isQuote;
           } else {
+            buffer.append(c);
+          }
+          break;
+        case '-':
+          if(command.charAt(index+1) =='-' && Character.isDigit(command.charAt(index+1))){
+            buffer.append(c);
+          } else {
+            opts=true;
             buffer.append(c);
           }
           break;
