@@ -89,7 +89,6 @@ public class JobTypeManager {
     logger.info("Loading plugin default job types");
     plugins.addPluginClass("command", ProcessJob.class);
     plugins.addPluginClass("javaprocess", JavaProcessJob.class);
-    plugins.addPluginClass("pythonprocess", JavaProcessJob.class);
     plugins.addPluginClass("noop", NoopJob.class);
   }
 
