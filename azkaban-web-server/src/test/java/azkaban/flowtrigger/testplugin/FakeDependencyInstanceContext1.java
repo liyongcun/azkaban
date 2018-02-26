@@ -14,38 +14,26 @@
  * the License.
  */
 
-package azkaban.flowtrigger.testplugin2;
+package azkaban.flowtrigger.testplugin;
 
-import azkaban.flowtrigger.DependencyCheck;
 import azkaban.flowtrigger.DependencyInstanceCallback;
 import azkaban.flowtrigger.DependencyInstanceConfig;
 import azkaban.flowtrigger.DependencyInstanceContext;
 import azkaban.flowtrigger.DependencyInstanceRuntimeProps;
-import azkaban.flowtrigger.DependencyPluginConfig;
 
-public class TestDependencyCheck2 implements DependencyCheck {
+@SuppressWarnings("FutureReturnValueIgnored")
+public class FakeDependencyInstanceContext1 implements DependencyInstanceContext {
 
-  private DependencyPluginConfig config;
+  private final DependencyInstanceCallback callback;
 
-  @Override
-  public DependencyInstanceContext run(final DependencyInstanceConfig config,
+  public FakeDependencyInstanceContext1(final DependencyInstanceConfig config,
       final DependencyInstanceRuntimeProps runtimeProps,
       final DependencyInstanceCallback callback) {
-    return new TestDependencyInstanceContext2(config, runtimeProps, callback);
+    this.callback = callback;
   }
 
   @Override
-  public void shutdown() {
-  }
-
-  @Override
-  public String toString() {
-    return this.config.toString();
-  }
-
-  @Override
-  public void init(final DependencyPluginConfig config) {
-    this.config = config;
+  public void cancel() {
+    this.callback.onCancel(this);
   }
 }
-

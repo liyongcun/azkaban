@@ -17,6 +17,8 @@
 
 package azkaban;
 
+import java.time.Duration;
+
 /**
  * Constants used in configuration files or shared among classes.
  *
@@ -79,8 +81,14 @@ public class Constants {
   // One Schedule's default End Time: 01/01/2050, 00:00:00, UTC
   public static final long DEFAULT_SCHEDULE_END_EPOCH_TIME = 2524608000000L;
 
+  // Default flow trigger max wait time
+  public static final Duration DEFAULT_FLOW_TRIGGER_MAX_WAIT_TIME = Duration.ofDays(10);
+
+  public static final Duration MIN_FLOW_TRIGGER_WAIT_TIME = Duration.ofMinutes(1);
+
   // The flow exec id for a flow trigger instance which hasn't started a flow yet
   public static final int UNASSIGNED_EXEC_ID = -1;
+
 
   public static class ConfigurationKeys {
 
@@ -181,10 +189,13 @@ public class Constants {
      **/
     public static final String AZKABAN_STORAGE_ARTIFACT_MAX_RETENTION = "azkaban.storage.artifact.max.retention";
 
-    // enable Quartz Scheduler if true.
+    // enable quartz scheduler and flow trigger if true.
     public static final String ENABLE_QUARTZ = "azkaban.server.schedule.enable_quartz";
 
     public static final String CUSTOM_CREDENTIAL_NAME = "azkaban.security.credential";
+
+    // dir to keep dependency plugins
+    public static final String DEPENDENCY_PLUGIN_DIR = "azkaban.dependency.plugin.dir";
   }
 
   public static class FlowProperties {
