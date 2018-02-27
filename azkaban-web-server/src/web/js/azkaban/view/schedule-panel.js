@@ -232,9 +232,10 @@ function updateExpression() {
   $('#nextRecurId').html("");
 
   // transformFromQuartzToUnixCron is defined in util/date.js
-  var unixCronStr = transformFromQuartzToUnixCron($(cron_output_id).val());
+  // var unixCronStr = transformFromQuartzToUnixCron($(cron_output_id).val());
+  var unixCronStr= $(cron_output_id).val().replace("?","*");
   console.log("Parsed Unix cron = " + unixCronStr);
-  var laterCron = later.parse.cron(unixCronStr);
+  var laterCron = later.parse.cron(unixCronStr,true);
 
   //Get the current time given the server timezone.
   var serverTime = moment().tz(timezone);
@@ -248,7 +249,7 @@ function updateExpression() {
   //Transform the moment time to UTC Date time (required by later.js)
   var serverTimeInJsDateFormat = new Date();
   serverTimeInJsDateFormat.setUTCHours(serverTime.get('hour'),
-      serverTime.get('minute'), 0, 0);
+      serverTime.get('minute'), serverTime.get('second'), 0);
   serverTimeInJsDateFormat.setUTCMonth(serverTime.get('month'),
       serverTime.get('date'));
 
@@ -266,7 +267,7 @@ function updateExpression() {
     // Get the time. The original occurance time string is like: "2016-09-09T05:00:00.999",
     // We trim the string to ignore milliseconds.
     var nextTime = '<li style="color:DarkGreen">' + strTime.substring(
-        1, strTime.length - 6) + '</li>';
+        1, strTime.length - 6).replace("T"," ") + '</li>';
     $('#nextRecurId').prepend(nextTime);
   }
 }

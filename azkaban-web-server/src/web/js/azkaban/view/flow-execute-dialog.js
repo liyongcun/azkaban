@@ -47,7 +47,6 @@ azkaban.FlowExecuteDialogView = Backbone.View.extend({
 
   render: function () {
   },
-
   getExecutionOptionData: function () {
     var failureAction = $('#failure-action').val();
     var failureEmails = $('#failure-emails').val();

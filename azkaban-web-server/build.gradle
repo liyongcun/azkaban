@@ -82,7 +82,7 @@ task movingJsTojsToPackage(dependsOn: ['npm_install']) {
 
     doLast {
         copy {
-            from "node_modules/later/later.min.js"
+            from "node_modules/later/later.js"
             into "${buildDir}/jsToPackage"
         }
         copy {
