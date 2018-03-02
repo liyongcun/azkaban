@@ -20,6 +20,7 @@ import static java.util.Objects.requireNonNull;
 
 import azkaban.Constants;
 import azkaban.Constants.ConfigurationKeys;
+//import org.apache.commons.beanutils.PropertyUtils;
 import azkaban.alert.Alerter;
 import azkaban.executor.ExecutableFlow;
 import azkaban.executor.ExecutableNode;
@@ -29,8 +30,11 @@ import azkaban.executor.mail.DefaultMailCreator;
 import azkaban.executor.mail.MailCreator;
 import azkaban.metrics.CommonMetrics;
 import azkaban.sla.SlaOption;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.apache.log4j.Logger;
@@ -53,7 +57,13 @@ public class Emailer extends AbstractMailer implements Alerter {
   private final String azkabanName;
   private final String tls;
   private boolean testMode = false;
-
+  private final String urlmsg_url;
+  private final String urlmsg_props;
+  private final String urlmsg_user_flag;
+  private final String urlmsg_msg_flag;
+  private final String urlmsg_type;
+  private final boolean url_wechat;
+  private String urlmsg_user;
   @Inject
   public Emailer(final Props props, final CommonMetrics commonMetrics) {
     super(props);
@@ -65,6 +75,16 @@ public class Emailer extends AbstractMailer implements Alerter {
     this.mailPassword = props.getString("mail.password", "");
     this.mailSender = props.getString("mail.sender", "");
     this.tls = props.getString("mail.tls", "false");
+
+    this.urlmsg_url=props.getString("urlmsg.host", "http://localhost");
+    this.urlmsg_props=props.getString("urlmsg.props", "");
+    this.urlmsg_user_flag=props.getString("urlmsg.user_flag", "");
+    this.urlmsg_msg_flag=props.getString("urlmsg.msg_flag", "");
+    this.urlmsg_type=props.getString("urlmsg.type", "post");
+    this.url_wechat=props.getBoolean("urlmsg.wechat", false);
+    if (urlmsg_user_flag.length() >0){
+      urlmsg_user=props.getString(urlmsg_user_flag,"");
+    }
 
     final int mailTimeout = props.getInt("mail.timeout.millis", 30000);
     EmailMessage.setTimeout(mailTimeout);
@@ -145,7 +165,75 @@ public class Emailer extends AbstractMailer implements Alerter {
     }
   }
 
+  private  void   sendurl(final ExecutableFlow flow) throws UnsupportedEncodingException {
+    SimpleDateFormat utcFormater = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    utcFormater.setTimeZone(TimeZone.getTimeZone("Asia/Shanghai"));
+    Map<String ,String> pops= new HashMap<>();
+    String str_pop="";
+    String jsn_pop="";
+    Date t_d= new Date();
+    if (flow.getEndTime() >0) {
+      t_d.setTime(flow.getEndTime());
+    }
+    String s_msg=String.format("project name : %s at %s has failed",flow.getProjectName(),utcFormater.format(t_d));
+
+    if (urlmsg_url.length() >0  && urlmsg_props.length() >0) {
+        String tmp_str[]=urlmsg_props.split(";");
+
+        for (String m:tmp_str){
+            pops.put(m.split(":",-1)[0],m.split(":",-1)[1]);
+            str_pop+=m.split(":",-1)[0]+"="+m.split(":",-1)[1]+"&";
+            jsn_pop+="\""+m.split(":",-1)[0]+"\":"+"\""+m.split(":",-1)[1]+"\",";
+        }
+
+        if (urlmsg_user_flag.length() > 0 && urlmsg_user.length() > 0) {
+            jsn_pop += "\"" + urlmsg_user_flag + "\":\"" + urlmsg_user + "\",";
+            str_pop +=urlmsg_user_flag+"="+urlmsg_user+ "&";
+        }
+
+        if (urlmsg_msg_flag.length() > 0) {
+            jsn_pop += "\"" + urlmsg_msg_flag + "\":\"" + s_msg + "\",";
+            str_pop +=urlmsg_user_flag+"="+urlmsg_user+ "&";
+        }
+
+        if (str_pop.charAt(str_pop.length()-1) == '&'){
+            str_pop=str_pop.substring(0,str_pop.length()-1);
+        }
+        if (jsn_pop.charAt(jsn_pop.length()-1) == '&'){
+            jsn_pop=jsn_pop.substring(0,jsn_pop.length()-1);
+        }
+
+        String url = new String(urlmsg_url);
+        if (url.indexOf(url.length() - 1) == '/') {
+            url = url.substring(0, url.length() - 1);
+        }
+        if (url_wechat) {
+            if (pops.size() > 0) {
+                UrlMessage.alertWeixin(url,pops,s_msg);
+            }
+        } else {
+            if (urlmsg_type.toLowerCase().equals("post")) {
+                //post 模式(json 的字符串格式)
+                 UrlMessage.sendPost(url, "{" + jsn_pop + "}");
+            } else {
+                //get 模式 &模式
+                UrlMessage.sendGet(urlmsg_url,str_pop);
+            }
+        }
+    }
+  }
+
   public void sendFirstErrorMessage(final ExecutableFlow flow) {
+      if (flow.getExecutionOptions().isMailForurl()){
+          try {
+            sendurl(flow);
+          } catch (final Exception e) {
+              logger.error(
+                      "Failed to send first error url message for execution " + flow.getExecutionId(), e);
+              this.commonMetrics.markSendEmailFail();
+          }
+          return;
+      }
     final EmailMessage message = new EmailMessage(this.mailHost, this.mailPort, this.mailUser,
         this.mailPassword);
     message.setFromAddress(this.mailSender);
@@ -153,7 +241,7 @@ public class Emailer extends AbstractMailer implements Alerter {
     message.setAuth(super.hasMailAuth());
 
     final ExecutionOptions option = flow.getExecutionOptions();
-
+    //todo 这里判断执行邮件还是url massage
     final MailCreator mailCreator =
         DefaultMailCreator.getCreator(option.getMailCreator());
 
@@ -178,6 +266,16 @@ public class Emailer extends AbstractMailer implements Alerter {
   }
 
   public void sendErrorEmail(final ExecutableFlow flow, final String... extraReasons) {
+      if (flow.getExecutionOptions().isMailForurl()){
+          try {
+              sendurl(flow);
+          } catch (final Exception e) {
+              logger.error(
+                      "Failed to send first error url message for execution " + flow.getExecutionId(), e);
+              this.commonMetrics.markSendEmailFail();
+          }
+          return;
+      }
     final EmailMessage message = new EmailMessage(this.mailHost, this.mailPort, this.mailUser,
         this.mailPassword);
     message.setFromAddress(this.mailSender);
@@ -185,7 +283,7 @@ public class Emailer extends AbstractMailer implements Alerter {
     message.setAuth(super.hasMailAuth());
 
     final ExecutionOptions option = flow.getExecutionOptions();
-
+    //todo 这里判断执行邮件还是url massage
     final MailCreator mailCreator =
         DefaultMailCreator.getCreator(option.getMailCreator());
     logger.debug("ExecutorMailer using mail creator:"
@@ -209,6 +307,16 @@ public class Emailer extends AbstractMailer implements Alerter {
   }
 
   public void sendSuccessEmail(final ExecutableFlow flow) {
+      if (flow.getExecutionOptions().isMailForurl()){
+          try {
+              sendurl(flow);
+          } catch (final Exception e) {
+              logger.error(
+                      "Failed to send first error url message for execution " + flow.getExecutionId(), e);
+              this.commonMetrics.markSendEmailFail();
+          }
+          return;
+      }
     final EmailMessage message = new EmailMessage(this.mailHost, this.mailPort, this.mailUser,
         this.mailPassword);
     message.setFromAddress(this.mailSender);
@@ -216,7 +324,7 @@ public class Emailer extends AbstractMailer implements Alerter {
     message.setAuth(super.hasMailAuth());
 
     final ExecutionOptions option = flow.getExecutionOptions();
-
+   //todo 这里判断执行邮件还是url massage
     final MailCreator mailCreator =
         DefaultMailCreator.getCreator(option.getMailCreator());
     logger.debug("ExecutorMailer using mail creator:"

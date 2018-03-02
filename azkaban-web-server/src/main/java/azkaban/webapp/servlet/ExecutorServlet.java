@@ -922,30 +922,64 @@ public class ExecutorServlet extends LoginAbstractAzkabanServlet {
       return;
     }
 
-    final ExecutableFlow exflow = FlowUtils.createExecutableFlow(project, flow);
-    exflow.setSubmitUser(user.getUserId());
-
     final ExecutionOptions options = HttpRequestUtils.parseFlowOptions(req);
-    exflow.setExecutionOptions(options);
-    if (!options.isFailureEmailsOverridden()) {
-      options.setFailureEmails(flow.getFailureEmails());
-    }
-    if (!options.isSuccessEmailsOverridden()) {
-      options.setSuccessEmails(flow.getSuccessEmails());
-    }
-    options.setMailCreator(flow.getMailCreator());
-
-    try {
-      HttpRequestUtils.filterAdminOnlyFlowParams(this.userManager, options, user);
-      final String message =
+    if (options.isBatchFalg()) {
+      int start = options.getBatch_range()[0];
+      int end = options.getBatch_range()[1];
+      int intv = options.getBatch_interval();
+      ExecutableFlow exflow;
+      List<Integer> f_id = new ArrayList<>();
+      while (start <= end) {
+        //todo 添加批量任务 for 循环提交 并在FLOW_PARAMETERS中添加循环的的迭代名称
+        exflow= FlowUtils.createExecutableFlow(project, flow);
+        exflow.setSubmitUser(user.getUserId());
+        exflow.setExecutionOptions(options);
+        if (!options.isFailureEmailsOverridden()) {
+          options.setFailureEmails(flow.getFailureEmails());
+        }
+        if (!options.isSuccessEmailsOverridden()) {
+          options.setSuccessEmails(flow.getSuccessEmails());
+        }
+        options.setMailCreator(flow.getMailCreator());
+        try {
+          HttpRequestUtils.filterAdminOnlyFlowParams(this.userManager, options, user);
+          exflow.getExecutionOptions().addFlowParameters(options.getBatch_name(), String.valueOf(start));
+          start += intv;
           this.executorManager.submitExecutableFlow(exflow, user.getUserId());
-      ret.put("message", message);
-    } catch (final Exception e) {
-      e.printStackTrace();
-      ret.put("error",
-          "Error submitting flow " + exflow.getFlowId() + ". " + e.getMessage());
+          f_id.add(exflow.getExecutionId());
+        } catch (final Exception e) {
+          e.printStackTrace();
+          ret.put("error",
+                  "Error submitting flow " + exflow.getFlowId() + ". " + e.getMessage());
+          break;
+        }
+      }
+      ret.put("message","batch job size :"+f_id.size() +" has submited" );
+      ret.put("execid",f_id.get(f_id.size()-1));
+    } else {
+      final ExecutableFlow exflow = FlowUtils.createExecutableFlow(project, flow);
+      exflow.setSubmitUser(user.getUserId());
+      exflow.setExecutionOptions(options);
+      if (!options.isFailureEmailsOverridden()) {
+        options.setFailureEmails(flow.getFailureEmails());
+      }
+      if (!options.isSuccessEmailsOverridden()) {
+        options.setSuccessEmails(flow.getSuccessEmails());
+      }
+      options.setMailCreator(flow.getMailCreator());
+      try {
+        HttpRequestUtils.filterAdminOnlyFlowParams(this.userManager, options, user);
+        //todo 添加批量任务 for 循环提交 并在FLOW_PARAMETERS中添加循环的的迭代名称
+          final String message =
+                  this.executorManager.submitExecutableFlow(exflow, user.getUserId());
+          ret.put("message", message);
+      } catch (final Exception e) {
+        e.printStackTrace();
+        ret.put("error",
+                "Error submitting flow " + exflow.getFlowId() + ". " + e.getMessage());
+      }
+      ret.put("execid", exflow.getExecutionId());
     }
 
-    ret.put("execid", exflow.getExecutionId());
   }
 }

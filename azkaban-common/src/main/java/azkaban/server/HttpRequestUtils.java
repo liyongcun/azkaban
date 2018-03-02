@@ -112,6 +112,29 @@ public class HttpRequestUtils {
         execOptions.setDisabledJobs(disabledList);
       }
     }
+    //add by liyc
+    if (hasParam(req, "batch_prop_name")) {
+      final String prop_name = getParam(req, "batch_prop_name");
+      final int prop_first = getIntParam(req, "batch_begin_id",0);
+      final int prop_end = getIntParam(req, "batch_end_id",0);
+      final int prop_interval = getIntParam(req, "batch_inteval",0);
+      if (prop_name.length() <=0 || prop_interval <=0 || prop_first>=prop_end){
+        execOptions.setBatchFalg(false);
+      } else {
+        execOptions.setBatchFalg(true);
+        execOptions.setBatch_name(prop_name);
+        execOptions.setBatch_range(prop_first,prop_end);
+        execOptions.setBatch_interval(prop_interval);
+      }
+    }
+    if (hasParam(req, "notifyUrl")) {
+      final boolean url_flag = getBooleanParam(req, "notifyUrl", false);
+      if (url_flag){
+        execOptions.setMailForurl(url_flag);
+      } else {
+        execOptions.setMailForurl(false);
+      }
+    }
     return execOptions;
   }
 

@@ -23,9 +23,13 @@ azkaban.FlowExecuteDialogView = Backbone.View.extend({
     "click #schedule-btn": "scheduleClick",
     "click #execute-btn": "handleExecuteFlow"
   },
-
+  defaults:{p_name:"", f_v:0, e_v:0, int_v:0},
   initialize: function (settings) {
     this.model.bind('change:flowinfo', this.changeFlowInfo, this);
+      p_name=0;
+      f_v=0;
+      e_v=0;
+      int_v=0;
     $("#override-success-emails").click(function (evt) {
       if ($(this).is(':checked')) {
         $('#success-emails').attr('disabled', null);
@@ -43,8 +47,23 @@ azkaban.FlowExecuteDialogView = Backbone.View.extend({
         $('#failure-emails').attr('disabled', "disabled");
       }
     });
+    $('#submit').click(function() {
+        p_name=$('#prop_name').val();
+        f_v=$('#start_num').val();
+        e_v=$('#end_num').val();
+        int_v=$('#interval_num').val();
+        if(f_v>=e_v){
+            alert("please check (Start Value) < (End Value)");
+        };
+        if(int_v <=0 ){
+            alert("please check (Interval Value) >0");
+        }
+        if (p_name.length <=0){
+            alert("please write Property Name");
+        }
+        alert("check ok");
+    });
   },
-
   render: function () {
   },
   getExecutionOptionData: function () {
@@ -56,7 +75,6 @@ azkaban.FlowExecuteDialogView = Backbone.View.extend({
     var notifyUrl= $('#notify-url').is(':checked');
     var failureEmailsOverride = $("#override-failure-emails").is(':checked');
     var successEmailsOverride = $("#override-success-emails").is(':checked');
-
     var flowOverride = {};
     var editRows = $(".editRow");
     for (var i = 0; i < editRows.length; ++i) {
@@ -69,10 +87,11 @@ azkaban.FlowExecuteDialogView = Backbone.View.extend({
         flowOverride[key] = val;
       }
     }
-
     var data = this.model.get("data");
     var disabledList = gatherDisabledNodes(data);
-
+    if (p_name.length >0){
+      console.log("this is a batch job "+ p_name)
+    }
     var executingData = {
       projectId: projectId,
       project: this.projectName,
@@ -87,9 +106,12 @@ azkaban.FlowExecuteDialogView = Backbone.View.extend({
       notifyFailureFirst: notifyFailureFirst,
       notifyFailureLast: notifyFailureLast,
       notifyUrl:notifyUrl,
-      flowOverride: flowOverride
+      flowOverride: flowOverride,
+      batch_prop_name:p_name,
+      batch_begin_id:f_v,
+      batch_end_id:e_v,
+      batch_inteval:int_v,
     };
-
     // Set concurrency option, default is skip
 
     var concurrentOption = $('input[name=concurrent]:checked').val();
@@ -100,7 +122,11 @@ azkaban.FlowExecuteDialogView = Backbone.View.extend({
     }
     else if (concurrentOption == "queue") {
       executingData.queueLevel = $("#queueLevel").val();
+    } else if (p_name.length >0) {
+        executingData.concurrentOption = "pipeline";
+        executingData.pipelineLevel=2;
     }
+
 
     return executingData;
   },

@@ -13,22 +13,21 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class UrlMessage implements Alerter {
+public class UrlMessage{
     private static final Logger LOGGER = LoggerFactory.getLogger(UrlMessage.class);
-    private Props props;
-
-    public UrlMessage(final Props props){
-        this.props = props;
-        LOGGER.info("weixin alert plugin : " + props.toString());
+    public static String  sendGet(String url, String param) {
+        String urlNameString = url + "?" + param;
+        return  sendGet(urlNameString);
     }
-    public static String sendGet(String url, String param) {
+    public static String sendGet(String url) {
         String result = "";
         BufferedReader in = null;
         try {
-            String urlNameString = url + "?" + param;
+            String urlNameString = url;
             URL realUrl = new URL(urlNameString);
             // 打开和URL之间的连接
             URLConnection connection = realUrl.openConnection();
@@ -124,45 +123,21 @@ public class UrlMessage implements Alerter {
         }
         return result;
     }
-
-    @Override
-    public void alertOnSuccess(ExecutableFlow executableFlow) throws Exception {
-        LOGGER.info("project " + executableFlow.getProjectName() + " execute success by submit time at " + executableFlow.getSubmitTime());
-    }
-    @Override
-    public void alertOnError(ExecutableFlow executableFlow, String... strings) throws Exception {
-//        alertWeixin(executableFlow,strings);
-    }
-    @Override
-    public void alertOnFirstError(ExecutableFlow executableFlow) throws Exception {
-//        alertWeixin(executableFlow);
-    }
-
-    @Override
-    public void alertOnSla(SlaOption slaOption, String s) throws Exception {
-    }
-
-    private void alertWeixin(ExecutableFlow executableFlow, String  strings){
-        LOGGER.info("project " + executableFlow.getProjectName() + " execute fail by submit time at "
-                + executableFlow.getSubmitTime() + " error msg :");
-
-        String tokenGetParam = "corpid="+props.getString("alerter.corpid")+
-                "&corpsecret="+props.getString("alerter.corpsecret");
-        String tokenResult = sendGet(props.getString("alerter.token.url"),tokenGetParam);
-        if(tokenResult.contains("errcode")){
-            LOGGER.error("request the weixin token fail,response is : " + tokenResult);
-        }else{
-            String[] retArr = tokenResult.split(",");
-            String string = retArr[2].split(":")[1];
-            String token = string.substring(1, string.length() -1);
-
-            ExecutionOptions options = executableFlow.getExecutionOptions();
-            Map<String,String> pramap = options.getFlowParameters();
-            String alerters = pramap.get("alerters");
-
-            String data = "{\"touser\": \""+alerters+"\",\"toparty\": \""+props.getString("alerter.toparty")+"\",\"msgtype\": \"text\"," +
-                    "\"agentid\": "+props.getInt("alerter.agentid")+",\"text\": {\"content\": \""+strings+"\"},\"safe\":0}";
-            sendPost(props.getString("alerter.send.url")+token,data);
+    public static void alertWeixin(String url,Map<String,String>  tmp ,String msg){
+        if (tmp.containsKey("corpid") && tmp.containsKey("corpsecret") && tmp.containsKey("token_url")
+                && tmp.containsKey("toparty") && tmp.containsKey("toparty") && tmp.containsKey("touser") ) {
+            String tokenGetParam = "corpid=" + tmp.get("corpid") + "&corpsecret=" + tmp.get("corpsecret");
+            String tokenResult = sendGet(tmp.get("token_url"), tokenGetParam);
+            if (tokenResult.contains("errcode")) {
+                LOGGER.error("request the weixin token fail,response is : " + tokenResult);
+            } else {
+                String[] retArr = tokenResult.split(",",-1);
+                String string = retArr[2].split(":")[1];
+                String token = string.substring(1, string.length() - 1);
+                String data = "{\"touser\": \"" + tmp.get("touser") + "\",\"toparty\": \"" + tmp.get("toparty") + "\",\"msgtype\": \"text\"," +
+                        "\"agentid\": " + tmp.get("agentid") + ",\"text\": {\"content\": \"" + msg + "\"},\"safe\":0}";
+                sendPost(url+ token, data);
+            }
         }
     }
 

@@ -55,12 +55,27 @@ public class ExecutionOptions {
   private static final String MAIL_CREATOR = "mailCreator";
   private static final String MEMORY_CHECK = "memoryCheck";
 
+  //add by liyc
+  private static final String MAIL_FOR_URL = "mailforurl";
+  private static final String BATCH_FLAG="Bacth_flag";
+  private static final String BATCH_BEGIN="Bacth_first";
+  private static final String BATCH_END="Bacth_End";
+  private static final String BATCH_INTV="Bacth_Intvarl";
+  private static final String BATCH_NAME="Bacth_name";
+
   private boolean notifyOnFirstFailure = true;
   private boolean notifyOnLastFailure = false;
   private boolean failureEmailsOverride = false;
   private boolean successEmailsOverride = false;
   private ArrayList<String> failureEmails = new ArrayList<>();
   private ArrayList<String> successEmails = new ArrayList<>();
+
+  //add by liyc
+  private boolean mailForurl=false;
+  private boolean batchFalg=false;
+  private String batch_name="";
+  private int[] batch_range=null;
+  private int batch_interval=1;
 
   private Integer pipelineLevel = null;
   private Integer pipelineExecId = null;
@@ -125,12 +140,20 @@ public class ExecutionOptions {
         false));
 
     options.setMemoryCheck(wrapper.getBool(MEMORY_CHECK, true));
-
+    options.setBatchFalg(wrapper.getBool(BATCH_FLAG,false));
+    options.setMailForurl(wrapper.getBool(MAIL_FOR_URL,false));
+    options.setBatch_range(wrapper.getInt(BATCH_BEGIN,0),wrapper.getInt(BATCH_END,0));
+    options.setBatch_name(wrapper.getString(BATCH_NAME,""));
+    options.setBatch_interval(wrapper.getInt(BATCH_INTV,1));
     return options;
   }
 
   public void addAllFlowParameters(final Map<String, String> flowParam) {
     this.flowParameters.putAll(flowParam);
+  }
+
+  public void addFlowParameters(final  String key ,final  String value ) {
+    this.flowParameters.put(key,value);
   }
 
   public Map<String, String> getFlowParameters() {
@@ -245,6 +268,48 @@ public class ExecutionOptions {
     this.memoryCheck = memoryCheck;
   }
 
+  public void setMailForurl(boolean fg){
+    this.mailForurl=fg;
+  }
+
+  public void setBatch_name(String batch_name) {
+    this.batch_name = batch_name;
+  }
+
+  public void setBatchFalg(boolean batchFalg) {
+    this.batchFalg = batchFalg;
+  }
+
+  public void setBatch_range(int x,int y) {
+    this.batch_range= new int[2];
+      this.batch_range[0] =x;
+      this.batch_range[1] =y;
+  }
+
+  public boolean isBatchFalg() {
+    return batchFalg;
+  }
+
+  public boolean isMailForurl() {
+    return mailForurl;
+  }
+
+  public int[] getBatch_range() {
+    return batch_range;
+  }
+
+  public String getBatch_name() {
+    return batch_name;
+  }
+
+  public int getBatch_interval() {
+    return batch_interval;
+  }
+
+  public void setBatch_interval(int batch_interval) {
+    this.batch_interval = batch_interval;
+  }
+
   public Map<String, Object> toObject() {
     final HashMap<String, Object> flowOptionObj = new HashMap<>();
 
@@ -263,6 +328,15 @@ public class ExecutionOptions {
     flowOptionObj.put(SUCCESS_EMAILS_OVERRIDE, this.successEmailsOverride);
     flowOptionObj.put(MAIL_CREATOR, this.mailCreator);
     flowOptionObj.put(MEMORY_CHECK, this.memoryCheck);
+    //add by liyc
+    flowOptionObj.put(BATCH_FLAG,this.batchFalg);
+    flowOptionObj.put(MAIL_FOR_URL,this.mailForurl);
+    if (this.batchFalg) {
+      flowOptionObj.put(BATCH_BEGIN, this.batch_range[0]);
+      flowOptionObj.put(BATCH_END, this.batch_range[1]);
+      flowOptionObj.put(BATCH_NAME, this.batch_name);
+      flowOptionObj.put(BATCH_INTV, this.batch_interval);
+    }
     return flowOptionObj;
   }
 
