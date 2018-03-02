@@ -37,7 +37,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -94,6 +93,12 @@ public class JdbcFlowTriggerInstanceLoaderImpl implements FlowTriggerInstanceLoa
               Status.RUNNING.ordinal(), Status.CANCELLING.ordinal(),
               Status.SUCCEEDED.ordinal(),
               Constants.UNASSIGNED_EXEC_ID);
+
+  private static final String SELECT_ALL_RUNNING_EXECUTIONS =
+      String.format("SELECT %s FROM %s WHERE dep_status = %s or dep_status = %s",
+          StringUtils.join(DEPENDENCY_EXECUTIONS_COLUMNS, ","),
+          DEPENDENCY_EXECUTION_TABLE,
+          Status.RUNNING.ordinal(), Status.CANCELLING.ordinal());
 
   private static final String SELECT_RECENTLY_FINISHED = String.format(
       "SELECT execution_dependencies.trigger_instance_id,dep_name,starttime,endtime,dep_status,"
@@ -216,7 +221,9 @@ public class JdbcFlowTriggerInstanceLoaderImpl implements FlowTriggerInstanceLoa
       for (final DependencyInstance depInst : triggerInst.getDepInstances()) {
         transOperator
             .update(INSERT_DEPENDENCY, triggerInst.getId(), depInst.getDepName(),
-                depInst.getStartTime(), depInst.getEndTime(), depInst.getStatus().ordinal(),
+                depInst.getStartTime(),
+                depInst.getEndTime(),
+                depInst.getStatus().ordinal(),
                 depInst.getCancellationCause().ordinal(),
                 triggerInst.getProject().getId(),
                 triggerInst.getProject().getVersion(),
@@ -233,9 +240,10 @@ public class JdbcFlowTriggerInstanceLoaderImpl implements FlowTriggerInstanceLoa
 
   @Override
   public void updateDependencyExecutionStatus(final DependencyInstance depInst) {
-    executeUpdate(UPDATE_DEPENDENCY_STATUS_ENDTIME_AND_CANCELLEATION_CAUSE, depInst.getStatus()
-            .ordinal(),
-        depInst.getEndTime(), depInst.getCancellationCause().ordinal(),
+    executeUpdate(UPDATE_DEPENDENCY_STATUS_ENDTIME_AND_CANCELLEATION_CAUSE,
+        depInst.getStatus().ordinal(),
+        depInst.getEndTime(),
+        depInst.getCancellationCause().ordinal(),
         depInst.getTriggerInstance().getId(),
         depInst.getDepName());
   }
@@ -250,6 +258,19 @@ public class JdbcFlowTriggerInstanceLoaderImpl implements FlowTriggerInstanceLoa
     final String query = String.format(SELECT_RECENTLY_FINISHED, limit);
     try {
       return this.dbOperator.query(query, new TriggerInstanceHandler());
+    } catch (final SQLException ex) {
+      handleSQLException(ex);
+    }
+    return Collections.emptyList();
+  }
+
+  @Override
+  public Collection<TriggerInstance> getRunning() {
+    try {
+      //todo chengren311:
+      // 1. add index for the execution_dependencies table to accelerate selection.
+      // 2. implement purging mechanism to keep reasonable amount of historical executions in db.
+      return this.dbOperator.query(SELECT_ALL_RUNNING_EXECUTIONS, new TriggerInstanceHandler());
     } catch (final SQLException ex) {
       handleSQLException(ex);
     }
@@ -311,8 +332,8 @@ public class JdbcFlowTriggerInstanceLoaderImpl implements FlowTriggerInstanceLoa
       while (rs.next()) {
         final String triggerInstId = rs.getString(DEPENDENCY_EXECUTIONS_COLUMNS[0]);
         final String depName = rs.getString(DEPENDENCY_EXECUTIONS_COLUMNS[1]);
-        final Date startTime = rs.getTimestamp(DEPENDENCY_EXECUTIONS_COLUMNS[2]);
-        final Date endTime = rs.getTimestamp(DEPENDENCY_EXECUTIONS_COLUMNS[3]);
+        final long startTime = rs.getLong(DEPENDENCY_EXECUTIONS_COLUMNS[2]);
+        final long endTime = rs.getLong(DEPENDENCY_EXECUTIONS_COLUMNS[3]);
         final Status status = Status.values()[rs.getInt(DEPENDENCY_EXECUTIONS_COLUMNS[4])];
         final CancellationCause cause = CancellationCause.values()[rs.getInt
             (DEPENDENCY_EXECUTIONS_COLUMNS[5])];
@@ -347,12 +368,12 @@ public class JdbcFlowTriggerInstanceLoaderImpl implements FlowTriggerInstanceLoa
 
       //sort on start time in ascending order
       Collections.sort(res, (o1, o2) -> {
-        if (o1.getStartTime() == null && o2.getStartTime() == null) {
-          return 0;
-        } else if (o1.getStartTime() != null && o2.getStartTime() != null) {
-          return o1.getStartTime().compareTo(o2.getStartTime());
+        if (o1.getStartTime() < o2.getStartTime()) {
+          return -1;
+        } else if (o1.getStartTime() > o2.getStartTime()) {
+          return 1;
         } else {
-          return o1.getStartTime() == null ? -1 : 1;
+          return 0;
         }
       });
 

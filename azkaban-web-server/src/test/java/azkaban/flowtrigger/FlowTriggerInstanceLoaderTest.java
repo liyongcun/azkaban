@@ -107,13 +107,11 @@ public class FlowTriggerInstanceLoaderTest {
     final List<DependencyInstance> depInstList = new ArrayList<>();
     for (final FlowTriggerDependency dep : flowTrigger.getDependencies()) {
       final String depName = dep.getName();
-      final Date startDate = new Date(startTime);
       final DependencyInstanceContext context = new TestDependencyInstanceContext(null, null, null);
       final Status status = Status.RUNNING;
       final CancellationCause cause = CancellationCause.NONE;
-      final Date endTime = null;
-      final DependencyInstance depInst = new DependencyInstance(depName, startDate, endTime,
-          context, status, cause);
+      final DependencyInstance depInst = new DependencyInstance(depName, startTime, 0, context,
+          status, cause);
       depInstList.add(depInst);
     }
 
@@ -184,7 +182,7 @@ public class FlowTriggerInstanceLoaderTest {
     this.triggerInstLoader.uploadTriggerInstance(expectedTriggerInst);
     for (final DependencyInstance depInst : expectedTriggerInst.getDepInstances()) {
       depInst.setStatus(Status.CANCELLED);
-      depInst.setEndTime(new Date());
+      depInst.setEndTime(System.currentTimeMillis());
       depInst.setCancellationCause(CancellationCause.MANUAL);
       this.triggerInstLoader.updateDependencyExecutionStatus(depInst);
     }
@@ -199,7 +197,7 @@ public class FlowTriggerInstanceLoaderTest {
     for (final DependencyInstance depInst : triggerInst.getDepInstances()) {
       depInst.setStatus(Status.SUCCEEDED);
       depInst.getTriggerInstance().setFlowExecId(associateFlowExecId);
-      depInst.setEndTime(new Date());
+      depInst.setEndTime(System.currentTimeMillis());
     }
   }
 
@@ -207,7 +205,7 @@ public class FlowTriggerInstanceLoaderTest {
     for (final DependencyInstance depInst : triggerInst.getDepInstances()) {
       depInst.setStatus(Status.CANCELLED);
       depInst.setCancellationCause(CancellationCause.TIMEOUT);
-      depInst.setEndTime(new Date());
+      depInst.setEndTime(System.currentTimeMillis());
     }
   }
 
@@ -264,6 +262,51 @@ public class FlowTriggerInstanceLoaderTest {
     final List<TriggerInstance> actual = new ArrayList<>(this.triggerInstLoader
         .getIncompleteTriggerInstances());
     assertTwoTriggerInstanceListsEqual(actual, expected, false, false);
+  }
+
+  @Test
+  public void testGetRunningTriggerInstancesReturnsEmpty() throws InterruptedException {
+    final List<TriggerInstance> all = new ArrayList<>();
+    for (int i = 0; i < 15; i++) {
+      all.add(this.createTriggerInstance(this.flowTrigger, this
+          .flow_id, this.flow_version, this.submitUser, this.project, System.currentTimeMillis()
+          + i * 10000));
+      finalizeTriggerInstanceWithSuccess(all.get(i), 1000);
+    }
+
+    this.shuffleAndUpload(all);
+
+    final Collection<TriggerInstance> running = this.triggerInstLoader.getRunning();
+    assertThat(running).isEmpty();
+  }
+
+  @Test
+  public void testGetRunningTriggerInstances() throws InterruptedException {
+    final List<TriggerInstance> all = new ArrayList<>();
+    for (int i = 0; i < 15; i++) {
+      all.add(this.createTriggerInstance(this.flowTrigger, this
+          .flow_id, this.flow_version, this.submitUser, this.project, System.currentTimeMillis()
+          + i * 10000));
+      if (i <= 3) {
+        finalizeTriggerInstanceWithCancelled(all.get(i));
+      } else if (i <= 6) {
+        finalizeTriggerInstanceWithSuccess(all.get(i), 1000);
+      } else if (i <= 9) {
+        finalizeTriggerInstanceWithCancelling(all.get(i));
+      }
+      //sleep for a while to ensure endtime is different for each trigger instance
+      Thread.sleep(1000);
+    }
+
+    this.shuffleAndUpload(all);
+
+    final List<TriggerInstance> finished = all.subList(7, all.size());
+
+    final List<TriggerInstance> expected = new ArrayList<>(finished);
+    expected.sort(Comparator.comparing(TriggerInstance::getStartTime));
+
+    final Collection<TriggerInstance> running = this.triggerInstLoader.getRunning();
+    assertTwoTriggerInstanceListsEqual(new ArrayList<>(running), expected, true, true);
   }
 
   private void assertTwoTriggerInstanceListsEqual(final List<TriggerInstance> actual,
@@ -338,7 +381,7 @@ public class FlowTriggerInstanceLoaderTest {
     this.shuffleAndUpload(all);
 
     final List<TriggerInstance> finished = all.subList(0, 7);
-    finished.sort((o1, o2) -> -1 * (o1.getEndTime().compareTo(o2.getEndTime())));
+    finished.sort((o1, o2) -> ((Long) o2.getEndTime()).compareTo(o1.getEndTime()));
 
     List<TriggerInstance> expected = new ArrayList<>(finished);
     expected.sort(Comparator.comparing(TriggerInstance::getStartTime));
