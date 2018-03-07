@@ -714,8 +714,8 @@ public class FlowRunnerManager implements EventListener,
     return this.threadPoolQueueSize;
   }
 
-  public void reloadJobTypePlugins() throws JobTypeManagerException {
-    this.jobtypeManager.loadPlugins();
+  public void reloadJobTypePlugins(final  boolean bak_flag) throws JobTypeManagerException {
+    this.jobtypeManager.loadPlugins(bak_flag);
   }
 
   public int getTotalNumExecutedFlows() {

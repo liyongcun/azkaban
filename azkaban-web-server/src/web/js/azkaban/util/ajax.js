@@ -38,6 +38,8 @@ function ajaxCall(requestURL, data, callback) {
       callback.call(this, data);
     }
   };
+  console.log(requestURL);
+  console.log(data.toString())
   $.get(requestURL, data, successHandler, "json");
 }
 

@@ -39,6 +39,7 @@ public interface ConnectorParams {
   public static final String DEACTIVATE = "deactivate";
   public static final String GET_STATUS = "getStatus";
   public static final String SHUTDOWN = "shutdown";
+  public static final String CHANGE_CFG = "change_cfg";
 
   public static final String MODIFY_EXECUTION_ACTION = "modifyExecution";
   public static final String MODIFY_EXECUTION_ACTION_TYPE = "modifyType";

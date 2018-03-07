@@ -29,6 +29,7 @@ import azkaban.executor.Executor;
 import azkaban.executor.ExecutorManagerAdapter;
 import azkaban.executor.ExecutorManagerException;
 import azkaban.executor.Status;
+import azkaban.executor.ExecutorApiClient;
 import azkaban.flow.Flow;
 import azkaban.flow.FlowUtils;
 import azkaban.project.Project;
@@ -44,6 +45,7 @@ import azkaban.user.User;
 import azkaban.user.UserManager;
 import azkaban.utils.ExternalLinkUtils;
 import azkaban.utils.FileIOUtils.LogData;
+import azkaban.utils.JSONUtils;
 import azkaban.utils.Pair;
 import azkaban.utils.Props;
 import azkaban.webapp.AzkabanWebServer;
@@ -51,6 +53,7 @@ import azkaban.webapp.WebMetrics;
 import azkaban.webapp.plugin.PluginRegistry;
 import azkaban.webapp.plugin.ViewerPlugin;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -97,6 +100,18 @@ public class ExecutorServlet extends LoginAbstractAzkabanServlet {
       } else {
         handleExecutionFlowPage(req, resp, session);
       }
+    } else if (hasParam(req, "action")) {
+      final HashMap<String, Object> ret = new HashMap<>();
+      final String act_srt = getParam(req, "action");
+      if (act_srt.length() >0 && act_srt.equals(ConnectorParams.RELOAD_JOBTYPE_PLUGINS_ACTION)){
+        ajaxExecuteAct(ret, session.getUser(),act_srt,false);
+      } else if (act_srt.equals(ConnectorParams.CHANGE_CFG) && hasParam(req,"bak")){
+        boolean bak_flag=Boolean.getBoolean(getParam(req,"bak"));
+        ajaxExecuteAct(ret, session.getUser(),act_srt,bak_flag);
+      } else{
+        ret.put(ConnectorParams.RESPONSE_ERROR, "unknown action");
+      }
+      this.writeJSON(resp, ret);
     } else {
       handleExecutionsPage(req, resp, session);
     }
@@ -167,7 +182,6 @@ public class ExecutorServlet extends LoginAbstractAzkabanServlet {
           flowName);
     } else {
       final String projectName = getParam(req, "project");
-
       ret.put("project", projectName);
       if (ajaxName.equals("executeFlow")) {
         ajaxAttemptExecuteFlow(req, resp, ret, session.getUser());
@@ -422,7 +436,40 @@ public class ExecutorServlet extends LoginAbstractAzkabanServlet {
 
     return null;
   }
-
+  private void ajaxExecuteAct( final HashMap<String, Object> ret, final User user,String action_str,boolean bak_flag){
+    if (HttpRequestUtils.hasPermission(this.userManager, user, Type.ADMIN)) {
+      ExecutorApiClient  client_api=new ExecutorApiClient();
+      final List<Pair<String, String>> paramList = new ArrayList<>();
+      URI uri=null;
+      for (Executor x:this.executorManager.getAllActiveExecutors()){
+        try {
+          paramList.clear();
+          paramList.add( new Pair<>("action",action_str));
+          if (action_str.equals(ConnectorParams.CHANGE_CFG)){
+            paramList.add( new Pair<>("bak",String.valueOf(bak_flag)));
+          }
+          uri=client_api.buildUri(x.getHost(),x.getPort(),"/executor",true,paramList.toArray(new Pair[0]));
+          String responseString = client_api.httpGet(uri,null) ;
+          Map<String, Object> jsonResponse = (Map<String, Object>) JSONUtils.parseJSONFromString(responseString);
+          String stat = (String) jsonResponse.get(ConnectorParams.STATUS_ACTION);
+          if (stat == null || !stat.equals("success")) {
+            ret.put(ConnectorParams.RESPONSE_ERROR, "reload jobtypes error");
+            return;
+          }
+        } catch (IOException e) {
+          e.printStackTrace();
+          logger.error("reload jobtypes error",e);
+          ret.put(ConnectorParams.RESPONSE_ERROR, "reload jobtypes error");
+          return;
+        }
+      }
+      ret.put(ConnectorParams.STATUS_ACTION, "success");
+      return;
+    } else {
+      ret.put(ConnectorParams.RESPONSE_ERROR, "reload jobtypes error");
+      return;
+    }
+  }
   protected Project getProjectAjaxByPermission(final Map<String, Object> ret,
       final String projectName, final User user, final Permission.Type type) {
     final Project project = this.projectManager.getProject(projectName);

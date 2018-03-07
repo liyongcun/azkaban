@@ -96,7 +96,14 @@ public class ExecutorServlet extends HttpServlet implements ConnectorParams {
           respMap.put("status", "alive");
         } else if (action.equals(RELOAD_JOBTYPE_PLUGINS_ACTION)) {
           logger.info("Reloading Jobtype plugins");
-          handleReloadJobTypePlugins(respMap);
+          handleReloadJobTypePlugins(respMap, false);
+        } else if (action.equals(CHANGE_CFG)) {
+          logger.info("Reloading Jobtype plugins");
+          if (hasParam(req,"bak")) {
+            handleReloadJobTypePlugins(respMap, true);
+          } else {
+            handleReloadJobTypePlugins(respMap, false);
+          }
         } else if (action.equals(ACTIVATE)) {
           logger.warn("Setting ACTIVE flag to true");
           setActive(true, respMap);
@@ -107,6 +114,8 @@ public class ExecutorServlet extends HttpServlet implements ConnectorParams {
           logger.warn("Setting ACTIVE flag to false");
           setActive(false, respMap);
         } else if (action.equals(SHUTDOWN)) {
+          shutdown(respMap);
+        } else if (action.equals(CHANGE_CFG)) {
           shutdown(respMap);
         } else {
           final int execid = Integer.parseInt(getParam(req, EXECID_PARAM));
@@ -339,10 +348,10 @@ public class ExecutorServlet extends HttpServlet implements ConnectorParams {
     }
   }
 
-  private void handleReloadJobTypePlugins(final Map<String, Object> respMap)
+  private void handleReloadJobTypePlugins(final Map<String, Object> respMap,final boolean bak_flag)
       throws ServletException {
     try {
-      this.flowRunnerManager.reloadJobTypePlugins();
+      this.flowRunnerManager.reloadJobTypePlugins(bak_flag);
       respMap.put(STATUS_PARAM, RESPONSE_SUCCESS);
     } catch (final Exception e) {
       logger.error(e.getMessage(), e);

@@ -58,6 +58,7 @@
   <ul class="nav nav-tabs nav-sm" id="header-tabs">
     <li id="currently-running-view-link"><a href="#currently-running">Currently Running</a></li>
     <li id="recently-finished-view-link"><a href="#recently-finished">Recently Finished</a></li>
+    <li><button type="button" id="setting-view-link" class="btn btn-link">System set</button></li>
   </ul>
 
   <div class="row" id="currently-running-view">
@@ -185,6 +186,20 @@
       </table>
     </div><!-- /col-xs-12 -->
   </div><!-- /row -->
+   <div id="setting-view">
+       <div class="panel panel-danger">
+           <div class="panel-heading">
+               <h3 class="panel-title">配置控制页面</h3>
+           </div>
+           <div class="panel-body">
+               <div class="btn-group btn-group-lg">
+                   <button type="button" class="btn btn-lg btn-default" id="reload_plugins">重新加载配置文件</button>
+                   <button type="button" class="btn btn-lg btn-default"data-toggle="modal"  data-target="#mode_changecfg" >配置文件主备切换</button>
+                   <button type="button" class="btn btn-lg btn-default" id="reload_executor">重新加载执行器</button>
+               </div>
+           </div>
+       </div>
+   </div>
   <div class="modal" id="messageDialog">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -203,6 +218,34 @@
         </div>
       </div>
     </div>
+  </div>
+  <div class="modal fade" id="mode_changecfg">
+      <div class="modal-dialog">
+          <div class="modal-content">
+              <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal">
+                      <span aria-hidden="true">&times;</span><span class="sr-only">Close</span>
+                  </button>
+                  <h4 class="modal-title">请选择切换(主/备)</h4>
+              </div>
+              <div class="modal-body">
+                  <div class="btn-group" data-toggle="buttons" id="bak_info">
+                      <label class="btn btn-primary">
+                          <input type="radio" name="options" value="false">主配置文件
+                      </label>
+                      <label class="btn btn-primary">
+                          <input type="radio" name="options" value="true">备配置文件
+                      </label>
+                  </div>
+              </div>
+              <div class="modal-footer">
+                  <form action="">
+                      <button type="button" class="btn btn-default" data-dismiss="modal" id="close_modal">Close</button>
+                      <button type="button" class="btn btn-primary" id="submit_change" >确定</button>
+                  </form>
+              </div>
+          </div>
+      </div>
   </div>
 </div><!-- /container-full -->
 </body>

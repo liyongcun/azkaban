@@ -42,6 +42,9 @@ public class JobTypeManager {
   private static final String JOBTYPESYSCONFFILE = "private.properties";
   // common properties for multiple plugins
   private static final String COMMONCONFFILE = "common.properties";
+
+  private static final String COMMONCONFFILE_BAK = "common_bak.properties";
+
   // common private properties for multiple plugins
   private static final String COMMONSYSCONFFILE = "commonprivate.properties";
   private static final Logger logger = Logger.getLogger(JobTypeManager.class);
@@ -56,10 +59,10 @@ public class JobTypeManager {
     this.parentLoader = parentClassLoader;
     this.globalProperties = globalProperties;
 
-    loadPlugins();
+    loadPlugins(false);
   }
 
-  public void loadPlugins() throws JobTypeManagerException {
+  public void loadPlugins(final  boolean bak_flag) throws JobTypeManagerException {
     final JobTypePluginSet plugins = new JobTypePluginSet();
 
     loadDefaultTypes(plugins);
@@ -70,7 +73,12 @@ public class JobTypeManager {
             .info("Job type plugin directory set. Loading extra job types from "
                 + pluginDir);
         try {
-          loadPluginJobTypes(plugins);
+          if(bak_flag){
+            loadPluginJobTypes(plugins,COMMONCONFFILE_BAK);
+          } else {
+            loadPluginJobTypes(plugins,COMMONCONFFILE);
+          }
+
         } catch (final Exception e) {
           logger.info("Plugin jobtypes failed to load. " + e.getCause(), e);
           throw new JobTypeManagerException(e);
@@ -93,7 +101,7 @@ public class JobTypeManager {
   }
 
   // load Job Types from jobtype plugin dir
-  private void loadPluginJobTypes(final JobTypePluginSet plugins)
+  private void loadPluginJobTypes(final JobTypePluginSet plugins,final String comm_file)
       throws JobTypeManagerException {
     final File jobPluginsDir = new File(this.jobTypePluginDir);
 
@@ -111,7 +119,7 @@ public class JobTypeManager {
 
     // Load the common properties used by all jobs that are run
     Props commonPluginJobProps = null;
-    final File commonJobPropsFile = new File(jobPluginsDir, COMMONCONFFILE);
+    final File commonJobPropsFile = new File(jobPluginsDir, comm_file);
     if (commonJobPropsFile.exists()) {
       logger.info("Common plugin job props file " + commonJobPropsFile
           + " found. Attempt to load.");
