@@ -49,7 +49,7 @@ public class FlowUtils {
 
     final DateTime loadTime = new DateTime();
 
-    props.put(CommonJobProperties.FLOW_START_TIMESTAMP, loadTime.toString());
+    props.put(CommonJobProperties.FLOW_START_TIMESTAMP, loadTime.toString("yyyy-MM-dd HH:mm:ss"));
     props.put(CommonJobProperties.FLOW_START_YEAR, loadTime.toString("yyyy"));
     props.put(CommonJobProperties.FLOW_START_MONTH, loadTime.toString("MM"));
     props.put(CommonJobProperties.FLOW_START_DAY, loadTime.toString("dd"));

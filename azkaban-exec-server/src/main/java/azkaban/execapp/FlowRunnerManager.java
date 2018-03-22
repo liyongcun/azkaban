@@ -50,6 +50,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.lang.Thread.State;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -134,7 +135,7 @@ public class FlowRunnerManager implements EventListener,
   private Props globalProps;
 
   private long lastCleanerThreadCheckTime = -1;
-  private long executionDirRetention = 1 * 24 * 60 * 60 * 1000; // 1 Day
+  private long executionDirRetention = 1 * 2 * 60 * 60 * 1000; // 2 Hour
 
   // We want to limit the log sizes to about 20 megs
   private String jobLogChunkSize = "5MB";
@@ -774,7 +775,7 @@ public class FlowRunnerManager implements EventListener,
   private class CleanerThread extends Thread {
 
     // Every hour, clean execution dir.
-    private static final long EXECUTION_DIR_CLEAN_INTERVAL_MS = 60 * 60 * 1000;
+    private static final long EXECUTION_DIR_CLEAN_INTERVAL_MS =  30* 60 * 1000;
     // Every 5 mins clean the old project dir
     private static final long OLD_PROJECT_DIR_INTERVAL_MS = 5 * 60 * 1000;
     // Every 2 mins clean the recently finished list
@@ -870,18 +871,20 @@ public class FlowRunnerManager implements EventListener,
     }
 
     private void cleanOlderExecutionDirs() {
-      final File dir = FlowRunnerManager.this.executionDirectory;
-
+      final File dir =  FlowRunnerManager.this.executionDirectory;
       final long pastTimeThreshold =
           System.currentTimeMillis() - FlowRunnerManager.this.executionDirRetention;
+      final String[] executionDirs_all = dir.list();
+//      logger.info(dir.getAbsolutePath()+" path list all:"+ Arrays.toString(executionDirs_all));
       final File[] executionDirs = dir
           .listFiles(path -> path.isDirectory() && path.lastModified() < pastTimeThreshold);
-
+      logger.info("path list :"+ Arrays.toString(executionDirs));
       for (final File exDir : executionDirs) {
         try {
           final int execId = Integer.valueOf(exDir.getName());
           if (FlowRunnerManager.this.runningFlows.containsKey(execId)
               || FlowRunnerManager.this.recentlyFinishedFlows.containsKey(execId)) {
+//            logger.info("-----include this execid in runningFlows or recentlyFinishedFlows"+execId);
             continue;
           }
         } catch (final NumberFormatException e) {

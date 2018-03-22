@@ -294,6 +294,7 @@ public class TriggerManager extends EventHandler implements
                     + TriggerManager.this.lastRunnerThreadCheckTime;
 
             try {
+              logger.info("beggin to check trigggers :"+ this.triggers.size());
               checkAllTriggers();
             } catch (final Exception e) {
               e.printStackTrace();

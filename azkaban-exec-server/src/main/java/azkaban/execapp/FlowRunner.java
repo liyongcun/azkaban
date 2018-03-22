@@ -736,7 +736,7 @@ public class FlowRunner extends EventHandler implements Runnable {
         this.logger.error("Error loading job override property for job "
             + node.getId());
       }
-
+      this.logger.info("exec dir:"+ this.execDir);
       final File path = new File(this.execDir, source);
       if (props == null) {
         // if no override prop, load the original one on disk
